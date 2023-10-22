@@ -1,12 +1,12 @@
-package org.example;
+package org.application;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserRepository implements Repository {
 
-    List<User> userList = new ArrayList<>();
-    int count = 0;
+    private List<User> userList = new ArrayList<>();
+    private int count = 0;
 
     @Override
     public void addUserToList (String name, SymbolType symbol) {
