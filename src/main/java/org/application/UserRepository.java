@@ -9,12 +9,21 @@ public class UserRepository implements Repository {
     private int count = 0;
 
     @Override
-    public void addUserToList (String name, SymbolType symbol) {
-        int id = ++count;
-        User user = new User(id,name,symbol);
-        userList.add(user);
-        System.out.println("Игрок №" + user.getId() + " по имени " + name + " зарегистрирован." +
-                "Играет символом " + symbol);
+    public boolean addUserToList (String name, SymbolType symbol) {
+        if (hasNotUserInList(name)) {
+            System.out.println("Это имя уже занято!");
+            return false;
+        }
+        if (nameHasOnlyLetters(name)) {
+            int id = ++count;
+            User user = new User(id, name, symbol);
+            userList.add(user);
+            System.out.println("Игрок №" + user.getId() + " по имени " + name + " зарегистрирован." +
+                    "Играет символом " + symbol);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -28,5 +37,13 @@ public class UserRepository implements Repository {
     @Override
     public List<User> getUsers() {
         return new ArrayList<>(userList);
+    }
+
+    private boolean nameHasOnlyLetters(String nameUser) {
+        return nameUser.matches(Constants.REGEX_CHECK_NAME_USER_BY_RIGHT);
+    }
+
+    private boolean hasNotUserInList(String name) {
+       return userList.stream().anyMatch(u -> u.getName().toLowerCase().equals(name.toLowerCase()));
     }
 }

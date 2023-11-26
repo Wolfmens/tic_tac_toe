@@ -34,36 +34,15 @@ public class Application {
     }
 
     private void createUsers() {
-        int count = 1;
-
-        while (count <= Constants.COUNT_USERS) {
-            System.out.println(Constants.DISPLAY_USER_WHICH_ADDING[count - 1]);
-            String nameUser = scanner.nextLine();
-            if (addingUser(nameUser, Constants.VAR_SYMBOL_GAME[count - 1])){
-                ++count;
+        int countNumber = 1;
+        while (countNumber <= Constants.COUNT_USERS) {
+            System.out.println(Constants.DISPLAY_USER_WHICH_ADDING[countNumber - 1]);
+            String nameUser = scanner.nextLine().strip();
+            if (repository.addUserToList(nameUser, Constants.VAR_SYMBOL_GAME[countNumber - 1])){
+                ++countNumber;
             } else {
                 System.out.println(Constants.DISPLAY_INCORRECT_NAME_MASSAGE);
             }
         }
-//        String nameFirstUser = scanner.nextLine();
-//        repository.addUserToList(nameFirstUser, SymbolType.X);
-//        System.out.print(Constants.WRITE_SECOND_USER);
-//        String nameSecondUser = scanner.nextLine();
-//        repository.addUserToList(nameSecondUser, SymbolType.O);
     }
-
-    private boolean addingUser(String nameUser, SymbolType type) {
-        if (nameHasOnlyLetters(nameUser)) {
-            repository.addUserToList(nameUser, type);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean nameHasOnlyLetters(String nameUser) {
-        return nameUser.matches(Constants.REGEX_CHECK_NAMEUSER_BY_RIGHT);
-    }
-
-
 }

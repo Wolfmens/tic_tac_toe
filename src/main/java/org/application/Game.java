@@ -4,43 +4,45 @@ import java.util.*;
 
 public class Game {
 
-    private String[][] board = new String[3][3];
-    private int count = 0;
-    private HashMap<String, Integer[]> mapOfNumberСellsToPositionInArray = new HashMap<>();
+    private final DataBaseByBoard dataBaseByBoard = new DataBaseByBoard();
 
     public boolean playGame(Scanner scanner, List<User> userList) {
-
-        fillingTheBoard();
+        dataBaseByBoard.fillingTheBoard();
         showBoard();
 
         while (true) {
             for (User user : userList) {
-                String answer = usersStep(user, scanner);
-                if (answer.equals("3")) {
+                String answer = usersStepAnswer(user, scanner);
+                if (answer.equals(Constants.WIN_IN_GAME)) {
                     System.out.println();
                     System.out.println("ПОЗДРАВЛЯЕМ!!!! Победитель: Игрок №" + user.getId() +
                             " с именем " + user.getName() + " который играл символом " + user.getSymbol());
                     System.out.println();
-
+                    dataBaseByBoard.setCount(0);
                     return true;
                 }
-                if (answer.equals("1")) {
-                    count = 0;
-                    playGame(scanner, userList);
+                if (answer.equals(Constants.PLAY_AGAIN)) {
+                    dataBaseByBoard.setCount(0);
+                    return playGame(scanner, userList);
                 }
-                if (answer.equals("2")) {
-                    count = 0;
+                if (answer.equals(Constants.RETURN_TO_MENU)) {
+                    dataBaseByBoard.setCount(0);
                     return true;
                 }
-                if (answer.equals("0")) {
+                if (answer.equals(Constants.EXIT)) {
                     return false;
+                }
+                if (answer.equals(Constants.DRAW_IN_THE_GAME)) {
+                    dataBaseByBoard.setCount(0);
+                    System.out.println("\nВсе ячейки заполнены, НИЧЬЯ!!\n");
+                    return true;
                 }
             }
         }
     }
 
     private void showBoard() {
-        for (String[] strings : board) {
+        for (String[] strings : dataBaseByBoard.getBoard()) {
             for (int j = 0; j < strings.length; j++) {
                 System.out.print(strings[j]);
                 System.out.print(j < 2 ? " " : "\n");
@@ -48,39 +50,37 @@ public class Game {
         }
     }
 
-    private void fillingTheBoard() {
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
-                ++count;
-                board[i][j] = String.valueOf(count);
-                mapOfNumberСellsToPositionInArray.put(String.valueOf(count), new Integer[]{i, j});
-            }
+    private String usersStepAnswer(User user, Scanner scanner) {
+        if (dataBaseByBoard.isAllCellsOccupied()) {
+            return Constants.DRAW_IN_THE_GAME;
         }
-    }
-
-    private String usersStep(User user, Scanner scanner) {
         System.out.println(Constants.HELP_IN_GAME);
         System.out.println("Ходит игрок №" + user.getId());
         System.out.print("Задайте пожалуйста номер клетки или команду: ");
         String numberUserOrCommand = getResultStep(scanner).strip();
         if (numberUserOrCommand.equals(Constants.EXIT_FROM_GAME)) {
-            return "0";
+            return Constants.EXIT;
         }
         if (numberUserOrCommand.equals(Constants.REPLAY)) {
-            return "1";
+            return Constants.PLAY_AGAIN;
         }
         if (numberUserOrCommand.equals(Constants.MENU)) {
-            return "2";
+            return Constants.RETURN_TO_MENU;
         }
-        int numberOne = mapOfNumberСellsToPositionInArray.get(numberUserOrCommand)[0];
-        int numberTwo = mapOfNumberСellsToPositionInArray.get(numberUserOrCommand)[1];
+        int X = dataBaseByBoard.getMapOfNumberСellsToPositionInArray().get(numberUserOrCommand)[0];
+        int Y = dataBaseByBoard.getMapOfNumberСellsToPositionInArray().get(numberUserOrCommand)[1];
+        if (!Character.isDigit(dataBaseByBoard.getBoard()[X][Y].charAt(0))) {
+            System.out.println("\nДанная ячейка уже выбрана, выберете другую ячейку или команду\n");
+            showBoard();
+            return usersStepAnswer(user, scanner);
+        }
         String symbol = user.getSymbol().toString();
-        board[numberOne][numberTwo] = symbol;
+        dataBaseByBoard.getBoard()[X][Y] = symbol;
         showBoard();
         if (checkForVictory(numberUserOrCommand, symbol)) {
-            return "3";
+            return Constants.WIN_IN_GAME;
         }
-        return "4";
+        return Constants.GAME_CONTINUE;
     }
 
     private String getResultStep(Scanner scanner) {
@@ -93,64 +93,79 @@ public class Game {
     }
 
     private boolean checkForVictory(String numberUser, String symbol) {
+        int number = Integer.parseInt(numberUser);
+        if (number % 2 == 0) {
+            return isWinIfEvenNumber(numberUser, symbol);
+        } else {
+            return isWinIfOddNumber(numberUser, symbol);
+        }
+    }
+
+    private boolean isWinIfOddNumber(String numberUser, String symbol) {
         switch (numberUser) {
-            case "2" -> {
-                if (board[0][0].equals(symbol) && board[0][2].equals(symbol) ||
-                        board[1][1].equals(symbol) && board[2][1].equals(symbol)) {
-                    return true;
-                }
-            }
-            case "4" -> {
-                if (board[0][0].equals(symbol) && board[2][0].equals(symbol) ||
-                        board[1][1].equals(symbol) && board[1][2].equals(symbol)) {
-                    return true;
-                }
-            }
-            case "8" -> {
-                if (board[2][0].equals(symbol) && board[2][2].equals(symbol) ||
-                        board[1][1].equals(symbol) && board[0][1].equals(symbol)) {
-                    return true;
-                }
-            }
-            case "6" -> {
-                if (board[0][2].equals(symbol) && board[2][2].equals(symbol) ||
-                        board[1][1].equals(symbol) && board[1][0].equals(symbol)) {
-                    return true;
-                }
-            }
             case "1" -> {
-                if (board[0][1].equals(symbol) && board[0][2].equals(symbol) ||
-                        board[1][0].equals(symbol) && board[2][0].equals(symbol) ||
-                        board[1][1].equals(symbol) && board[2][2].equals(symbol)) {
+                if (dataBaseByBoard.getBoard()[0][1].equals(symbol) && dataBaseByBoard.getBoard()[0][2].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[1][0].equals(symbol) && dataBaseByBoard.getBoard()[2][0].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[1][1].equals(symbol) && dataBaseByBoard.getBoard()[2][2].equals(symbol)) {
                     return true;
                 }
             }
             case "3" -> {
-                if (board[0][0].equals(symbol) && board[0][1].equals(symbol) ||
-                        board[1][2].equals(symbol) && board[2][2].equals(symbol) ||
-                        board[1][1].equals(symbol) && board[2][0].equals(symbol)) {
+                if (dataBaseByBoard.getBoard()[0][0].equals(symbol) && dataBaseByBoard.getBoard()[0][1].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[1][2].equals(symbol) && dataBaseByBoard.getBoard()[2][2].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[1][1].equals(symbol) && dataBaseByBoard.getBoard()[2][0].equals(symbol)) {
                     return true;
                 }
             }
             case "7" -> {
-                if (board[1][0].equals(symbol) && board[0][0].equals(symbol) ||
-                        board[2][1].equals(symbol) && board[2][2].equals(symbol) ||
-                        board[1][1].equals(symbol) && board[0][2].equals(symbol)) {
+                if (dataBaseByBoard.getBoard()[1][0].equals(symbol) && dataBaseByBoard.getBoard()[0][0].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[2][1].equals(symbol) && dataBaseByBoard.getBoard()[2][2].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[1][1].equals(symbol) && dataBaseByBoard.getBoard()[0][2].equals(symbol)) {
                     return true;
                 }
             }
             case "9" -> {
-                if (board[1][2].equals(symbol) && board[0][2].equals(symbol) ||
-                        board[2][1].equals(symbol) && board[2][0].equals(symbol) ||
-                        board[1][1].equals(symbol) && board[0][0].equals(symbol)) {
+                if (dataBaseByBoard.getBoard()[1][2].equals(symbol) && dataBaseByBoard.getBoard()[0][2].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[2][1].equals(symbol) && dataBaseByBoard.getBoard()[2][0].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[1][1].equals(symbol) && dataBaseByBoard.getBoard()[0][0].equals(symbol)) {
                     return true;
                 }
             }
             case "5" -> {
-                if (board[1][0].equals(symbol) && board[1][2].equals(symbol) ||
-                        board[0][1].equals(symbol) && board[2][1].equals(symbol) ||
-                        board[2][2].equals(symbol) && board[0][0].equals(symbol) ||
-                        board[2][0].equals(symbol) && board[0][2].equals(symbol)) {
+                if (dataBaseByBoard.getBoard()[1][0].equals(symbol) && dataBaseByBoard.getBoard()[1][2].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[0][1].equals(symbol) && dataBaseByBoard.getBoard()[2][1].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[2][2].equals(symbol) && dataBaseByBoard.getBoard()[0][0].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[2][0].equals(symbol) && dataBaseByBoard.getBoard()[0][2].equals(symbol)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isWinIfEvenNumber(String numberUser, String symbol) {
+        switch (numberUser) {
+            case "2" -> {
+                if (dataBaseByBoard.getBoard()[0][0].equals(symbol) && dataBaseByBoard.getBoard()[0][2].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[1][1].equals(symbol) && dataBaseByBoard.getBoard()[2][1].equals(symbol)) {
+                    return true;
+                }
+            }
+            case "4" -> {
+                if (dataBaseByBoard.getBoard()[0][0].equals(symbol) && dataBaseByBoard.getBoard()[2][0].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[1][1].equals(symbol) && dataBaseByBoard.getBoard()[1][2].equals(symbol)) {
+                    return true;
+                }
+            }
+            case "8" -> {
+                if (dataBaseByBoard.getBoard()[2][0].equals(symbol) && dataBaseByBoard.getBoard()[2][2].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[1][1].equals(symbol) && dataBaseByBoard.getBoard()[0][1].equals(symbol)) {
+                    return true;
+                }
+            }
+            case "6" -> {
+                if (dataBaseByBoard.getBoard()[0][2].equals(symbol) && dataBaseByBoard.getBoard()[2][2].equals(symbol) ||
+                        dataBaseByBoard.getBoard()[1][1].equals(symbol) && dataBaseByBoard.getBoard()[1][0].equals(symbol)) {
                     return true;
                 }
             }
